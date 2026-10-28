@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +11,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/socketmode"
+	"github.com/sst/opencode-sdk-go"
+	"github.com/sst/opencode-sdk-go/option"
 )
 
 func main() {
@@ -21,8 +25,9 @@ func main() {
 
 	botToken := os.Getenv("SLACK_BOT_TOKEN")
 	appToken := os.Getenv("SLACK_APP_TOKEN")
-	llmToken := os.Getenv("LLM_API_TOKEN")
-	llmModel := os.Getenv("LLM_MODEL")
+	llmServerIP := os.Getenv("OPENCODE_SERVER_IP")
+	llmServerPort := os.Getenv("OPENCODE_SERVER_PORT")
+	llmServerPass := os.Getenv("OPENCODE_SERVER_PASSWORD")
 
 
 	if appToken == "" {
@@ -45,24 +50,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	if llmToken == "" {
-		fmt.Fprintf(os.Stderr, "LLM_API_TOKEN environment variable is required.\n")
+	if llmServerIP == "" {
+		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_IP environment variable is required.\n")
 		os.Exit(1)
 	}
 
-	if !strings.HasPrefix(llmToken, "oc_sk_") {
-		fmt.Fprintf(os.Stderr, "LLM_API_TOKEN must have the prefix \"oc_sk_\", and be a valid OpenCode token.\n")
+	if llmServerPort == "" {
+		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_PORT environment variable is required.\n")
 		os.Exit(1)
 	}
 
-	if llmModel == "" {
-		fmt.Fprintf(os.Stderr, "LLM_MODEL environment variable is required.\n")
+	if llmServerPort == "" {
+		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_PORT environment variable is required.\n")
 		os.Exit(1)
 	}
 
-	// Note: This is a simple program, so it does not check if the typed LLM model is valid against
-	// the actual LLM list that OpenCode offers. Maybe in the future tho...
+	if llmServerPass == "" {
+		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_PASSWORD environment variable is required.\n")
+		os.Exit(1)
+	}
 
+	// Connect to Slack API and start a client
 	slackApi := slack.New(
 		botToken,
 		slack.OptionDebug(true),
@@ -75,8 +83,31 @@ func main() {
 		socketmode.OptionDebug(true),
 		socketmode.OptionLog(log.New(os.Stdout, "Slack Socket: ", log.Lshortfile|log.LstdFlags)),
 	)
+
+	// Connect to Opencode server
+	authStr := fmt.Sprintf("opencode:%s", llmServerPass)
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(authStr))
+	header := fmt.Sprintf("Basic %s", encodedAuth)
+
+	url := fmt.Sprintf("http://%s:%s", llmServerIP, llmServerPort)
+
+	client := opencode.NewClient(
+		option.WithBaseURL(url),
+		option.WithHeader("Authorization", header),
+		option.WithDebugLog(log.New(os.Stdout, "Opencode Client: ", log.Lshortfile|log.LstdFlags)),
+	)
+
+	// sessions, err := client.Session.List(context.TODO(), opencode.SessionListParams{})
+
+	// if err != nil {
+	// 	fmt.Printf("Failed to get sessions from the Opencode server. Info:\n%s", err)
+	// 	os.Exit(1)
+	// }
+
+	fmt.Printf("Connected successfully! Active sessions:\n%+v\n", sessions)
 	
-	go StartBot(slackClient)
+	go RunMonitor(slackClient)
+	go RunQuery(&llmServerIP, &llmServerPort, &llmServerPass)	
 
 	slackClient.Run()
 }
