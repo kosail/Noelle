@@ -91,23 +91,15 @@ func main() {
 
 	url := fmt.Sprintf("http://%s:%s", llmServerIP, llmServerPort)
 
-	client := opencode.NewClient(
+	ocClient := opencode.NewClient(
 		option.WithBaseURL(url),
 		option.WithHeader("Authorization", header),
 		option.WithDebugLog(log.New(os.Stdout, "Opencode Client: ", log.Lshortfile|log.LstdFlags)),
 	)
 
-	// sessions, err := client.Session.List(context.TODO(), opencode.SessionListParams{})
+	comm := make(chan string)
 
-	// if err != nil {
-	// 	fmt.Printf("Failed to get sessions from the Opencode server. Info:\n%s", err)
-	// 	os.Exit(1)
-	// }
-
-	fmt.Printf("Connected successfully! Active sessions:\n%+v\n", sessions)
-	
-	go RunMonitor(slackClient)
-	go RunQuery(&llmServerIP, &llmServerPort, &llmServerPass)	
+	go RunMonitor(slackClient, comm)
 
 	slackClient.Run()
 }
