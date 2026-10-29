@@ -43,8 +43,8 @@ func (m BotMode) SystemPrompt() string {
 // represents a single inquiry waiting to be processed by a worker
 type QueryJob struct {
 	ChannelID string // Slack channel where the question was asked
-	ThreadTS  string // Slack thread timestamp (used for goroutines thread)
-	UserID    string
+	ThreadTS  string // Slack thread timestamp (used for goroutines threading)
+	UserID    string // Slack user ID whom made the question
 	Prompt    string // Cleaned text of the question
 	Mode      BotMode
 }
