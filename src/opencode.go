@@ -13,15 +13,19 @@ import (
 
 // Wraps the SDK client and provides high-level helpers.
 type OpenCodeService struct {
-	client *opencode.Client
-	store  *SessionStore
+	client   *opencode.Client
+	store    *SessionStore
+	provider string
+	model    string
 }
 
 // Creates a new service wrapper
-func NewOpenCodeService(client *opencode.Client, store *SessionStore) *OpenCodeService {
+func NewOpenCodeService(client *opencode.Client, store *SessionStore, provider, model string) *OpenCodeService {
 	return &OpenCodeService{
-		client: client,
-		store:  store,
+		client:   client,
+		store:    store,
+		provider: provider,
+		model:    model,
 	}
 }
 
@@ -62,10 +66,19 @@ func (s *OpenCodeService) Query(ctx context.Context, sessionID string, job types
 	}
 
 	// Send the prompt to Opencode
-	resp, err := s.client.Session.Prompt(ctx, sessionID, opencode.SessionPromptParams{
+	promptParams := opencode.SessionPromptParams{
 		Parts:  opencode.F(parts),
 		System: opencode.F(job.Mode.SystemPrompt()),
-	})
+	}
+
+	if s.provider != "" && s.model != "" {
+		promptParams.Model = opencode.F(opencode.SessionPromptParamsModel{
+			ProviderID: opencode.F(s.provider),
+			ModelID:    opencode.F(s.model),
+		})
+	}
+
+	resp, err := s.client.Session.Prompt(ctx, sessionID, promptParams)
 
 	if err != nil {
 		return "", fmt.Errorf("Opencode prompt error: %w", err)

@@ -28,9 +28,11 @@ func main() {
 
 	botToken := os.Getenv("SLACK_BOT_TOKEN")
 	appToken := os.Getenv("SLACK_APP_TOKEN")
-	llmServerIP := os.Getenv("OPENCODE_SERVER_IP")
-	llmServerPort := os.Getenv("OPENCODE_SERVER_PORT")
-	llmServerPass := os.Getenv("OPENCODE_SERVER_PASSWORD")
+	ocServerIP := os.Getenv("OPENCODE_SERVER_IP")
+	ocServerPort := os.Getenv("OPENCODE_SERVER_PORT")
+	ocServerPass := os.Getenv("OPENCODE_SERVER_PASSWORD")
+	ocProvider := os.Getenv("OPENCODE_PROVIDER")
+	ocModel := os.Getenv("OPENCODE_MODEL")
 
 	if appToken == "" {
 		fmt.Fprintf(os.Stderr, "SLACK_APP_TOKEN environment variable is required\n")
@@ -52,14 +54,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if llmServerIP == "" || llmServerPort == "" {
+	if ocServerIP == "" || ocServerPort == "" {
 		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_IP and OPENCODE_SERVER_PORT environment variables are required.\n")
 		os.Exit(1)
 	}
 
-	if llmServerPass == "" {
+	if ocServerPass == "" {
 		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_PASSWORD environment variable is required.\n")
 		os.Exit(1)
+	}
+
+	if ocProvider == "" || ocModel == "" {
+		slog.Warn("OPENCODE_PROVIDER or OPENCODE_MODEL not found. Using OpenCode's server default config")
+	} else {
+		slog.Info(fmt.Sprintf("Using configured OpenCode model: %s/%s", ocProvider, ocModel))
 	}
 
 	// 2. Connect to Slack API and start a socketmode client
@@ -73,10 +81,10 @@ func main() {
 	)
 
 	// 3. Connect to OpenCode server
-	authStr := fmt.Sprintf("opencode:%s", llmServerPass)
+	authStr := fmt.Sprintf("opencode:%s", ocServerPass)
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte(authStr))
 	authHeader := fmt.Sprintf("Basic %s", encodedAuth)
-	baseUrl := fmt.Sprintf("http://%s:%s", llmServerIP, llmServerPort)
+	baseUrl := fmt.Sprintf("http://%s:%s", ocServerIP, ocServerPort)
 
 	ocClient := opencode.NewClient(
 		option.WithBaseURL(baseUrl),
@@ -85,7 +93,7 @@ func main() {
 
 	// 4. Initialize the session store and OC service
 	sessionStore := NewSessionStore()
-	ocService := NewOpenCodeService(ocClient, sessionStore)
+	ocService := NewOpenCodeService(ocClient, sessionStore, ocProvider, ocModel)
 
 	// 5. Create the buffered job channel (by now 30 items cap)
 	jobQueue := make(chan types.QueryJob, 30)
