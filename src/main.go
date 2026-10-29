@@ -16,11 +16,10 @@ import (
 )
 
 func main() {
-	// Check if .env is correctly set up
+	// Check if .env is correctly set up, and load env variables
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading .env file!")
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "Notice: No .env file found or failed to load. Using system environment variables.\n")
 	}
 
 	botToken := os.Getenv("SLACK_BOT_TOKEN")
@@ -50,21 +49,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if llmServerIP == "" {
-		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_IP environment variable is required.\n")
+	if llmServerIP == "" || llmServerPort == "" {
+		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_IP and OPENCODE_SERVER_PORT environment variables are required.\n")
 		os.Exit(1)
 	}
-
-	if llmServerPort == "" {
-		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_PORT environment variable is required.\n")
-		os.Exit(1)
-	}
-
-	if llmServerPort == "" {
-		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_PORT environment variable is required.\n")
-		os.Exit(1)
-	}
-
+	
 	if llmServerPass == "" {
 		fmt.Fprintf(os.Stderr, "OPENCODE_SERVER_PASSWORD environment variable is required.\n")
 		os.Exit(1)

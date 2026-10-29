@@ -75,15 +75,57 @@ func handleEventsAPI(client *socketmode.Client, evt socketmode.Event, jobs chan<
 		// Push the job to the workers
 		jobs <- types.QueryJob{
 			ChannelID: ev.Channel,
-			ThreadTS: threadTS,
-			UserID: ev.User,
-			Prompt: cleanPrompt,
-			Mode: types.ModeNormal,
+			ThreadTS:  threadTS,
+			UserID:    ev.User,
+			Prompt:    cleanPrompt,
+			Mode:      types.ModeNormal,
 		}
 	}
 }
 
 // Process /artist and /dev commands.
 func handleSlashCommand(client *socketmode.Client, evt socketmode.Event, jobs chan<- types.QueryJob) {
-	
+	cmd, ok := evt.Data.(slack.SlashCommand)
+	if !ok {
+		slog.Debug(fmt.Sprintf("Ignored slash event: %+v\n", cmd))
+		return
+	}
+
+	// Acknowledge immediately to Slack
+	client.Ack(*evt.Request)
+
+	cleanPrompt := strings.TrimSpace(cmd.Text)
+	if cleanPrompt == "" {
+		// If the user typed just the slash command without a question
+		msg := fmt.Sprintf("Please provide a question after %s. Example: `%s How do the tagging system works for my X specific use case?`", cmd.Command, cmd.Command)
+		_, _, _ = client.PostMessage(cmd.ChannelID, slack.MsgOptionText(msg, false))
+		return
+	}
+
+	// Determine the BotMode based on the command name
+	mode := types.ModeNormal
+	switch cmd.Command {
+	case "/artist":
+		mode = types.ModeArtist
+	case "/dev":
+		mode = types.ModeDev
+	}
+
+	// Post an initial message in the channel to anchor the conversation
+	announcement := fmt.Sprintf("<@%s> asked (%s): *%s*", cmd.UserID, mode.String(), cleanPrompt)
+	_, rootTS, err := client.PostMessage(cmd.ChannelID, slack.MsgOptionText(announcement, false))
+
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to post slash command announcement: %v", err))
+		return
+	}
+
+	// Use rootTS so the worker will post the full answer inside the new thread
+	jobs <- types.QueryJob{
+		ChannelID: cmd.ChannelID,
+		ThreadTS:  rootTS,
+		UserID:    cmd.UserID,
+		Prompt:    cleanPrompt,
+		Mode:      mode,
+	}
 }
