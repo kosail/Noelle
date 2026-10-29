@@ -47,7 +47,7 @@ func (s *SessionStore) Set(threadTS string, entry SessionEntry) {
 // Update the LastActivity timestamp of an existing session
 func (s *SessionStore) Touch(threadTS string) {
 	s.mu.Lock()
-	defer s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if entry, exists := s.sessions[threadTS]; exists {
 		entry.LastActivity = time.Now()

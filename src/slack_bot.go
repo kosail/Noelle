@@ -35,7 +35,7 @@ func RunMonitor(client *socketmode.Client, jobs chan<- types.QueryJob) {
 				slog.Debug(msg)
 				continue
 			}
-
+			handleSlashCommand(client, evt, jobs)
 		}
 	}
 }
