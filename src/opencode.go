@@ -65,12 +65,21 @@ func (s *OpenCodeService) Query(ctx context.Context, sessionID string, job types
 		},
 	}
 
-	// Send the prompt to Opencode
+	// Setting up the prompt mode. This bot will ever be read-only.
+	// Granting write permissions would be begging for a nuke in the server. Just, don't.
 	promptParams := opencode.SessionPromptParams{
 		Parts:  opencode.F(parts),
 		System: opencode.F(job.Mode.SystemPrompt()),
+		Agent: opencode.F("plan"), // 
 	}
 
+	promptParams.Tools = opencode.F(map[string]bool{
+		"edit": false,
+		"write": false,
+		"patch": false,
+	})
+
+	// Send the prompt to Opencode
 	if s.provider != "" && s.model != "" {
 		promptParams.Model = opencode.F(opencode.SessionPromptParamsModel{
 			ProviderID: opencode.F(s.provider),
