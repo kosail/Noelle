@@ -1,5 +1,12 @@
 package types
 
+import (
+	"log/slog"
+	"os"
+	"path/filepath"
+	"strings"
+)
+
 // BotMode represents which personality or focus noelle will use
 type BotMode int
 
@@ -21,22 +28,56 @@ func (m BotMode) String() string {
 	}
 }
 
-// return the specialized instruction set for OpenCode
-// TODO: Change this into a proper AGENTS.md for each use-case.
-// As per now, let's use simple prompts to ensure first it works
+// ContextFileName returns the filename corresponding to this mode
+// inside the context/ folder
+func (m BotMode) ContextFileName() string {
+	switch m {
+	case ModeArtist:
+		return "artist.md"
+	case ModeDev:
+		return "dev.md"
+	default:
+		return "normal.md"
+	}
+}
+
+// SystemPromptreads the mode's instructions from the context/ folder on disk
+// If the file is missing or cannot be read, it falls back to a built-in default.
 func (m BotMode) SystemPrompt() string {
+	filePath := filepath.Join("context", m.ContextFileName())
+
+	data, err := os.ReadFile(filePath)
+	if err == nil {
+		prompt := strings.TrimSpace(string(data))
+		if prompt != "" {
+			return prompt
+		}
+	}
+
+	// File was missing, empty or unreadable: log notice and use fallback
+	slog.Warn("Could not read prompt file, using built-in fallback", "file", filePath, "error, err")
+	return m.defaultSystemPrompt()
+}
+
+// defaultSystemPrompt provides safe in-memory defaults if files are not yet created.
+func (m BotMode) defaultSystemPrompt() string {
 	switch m {
 	case ModeArtist:
 		return "You are an assistant for Unity game artists and gameplay mechanics developers. " +
 			"Focus on Unity components, Inspector parameters, practical mechanics, and simple C# scripting. " +
-			"Avoid deep software architecture, infrastructure details, and unnecessary backend jargon."
+			"Avoid deep software architecture, infrastructure details, and unnecessary backend jargon. " +
+			"You are strictly a read-only assistant; never attempt to modify or create files."
+
 	case ModeDev:
 		return "You are an assistant for engine and core systems developers. " +
 			"Provide in-depth architectural analysis, memory and performance considerations, " +
-			"low-level code references, and systems design."
+			"low-level code references, and systems design. " +
+			"You are strictly a read-only assistant; never attempt to modify or create files."
+
 	default:
 		return "You are a helpful project assistant. Provide clear, balanced answers " +
-			"about the project files and documentation."
+			"about the project files and documentation. " +
+			"You are strictly a read-only assistant; never attempt to modify or create files."
 	}
 }
 

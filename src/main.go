@@ -70,6 +70,14 @@ func main() {
 		slog.Info(fmt.Sprintf("Using configured OpenCode model: %s/%s", ocProvider, ocModel))
 	}
 
+	// 1.5 Check if the context directory exists and can be located
+	contextDir := "context"
+	if info, err := os.Stat(contextDir); err == nil && info.IsDir() {
+		slog.Info("Found context/ folder for external prompts.")
+	} else {
+		slog.Warn("context/ folder not found. Noelle will use built-in fallback prompts.", "path", contextDir)
+	}
+
 	// 2. Connect to Slack API and start a socketmode client
 	slackApi := slack.New(
 		botToken,
