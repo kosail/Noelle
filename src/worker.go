@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
-
 	"noelle/src/types"
+	"time"
 
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/socketmode"
@@ -20,31 +19,97 @@ func StartWorker(id int, ocService *OpenCodeService, slackClient *socketmode.Cli
 	for job := range jobs {
 		slog.Info(fmt.Sprintf("Worker %d picked up query for thread %s [mode: %s]", id, job.ThreadTS, job.Mode.String()))
 
-		// Set a timeout of 5 minutes for the OpenCode call
+		// 1. Post an initial placeholder message in the Slack thread
+		_, msgTs, err := slackClient.PostMessage(
+			job.ChannelID,
+			slack.MsgOptionText("Processing your request...", false),
+			slack.MsgOptionTS(job.ThreadTS),
+		)
+
+		if err != nil {
+			slog.Error(fmt.Sprintf("Worker %d failed to post initial message: %v", id, err))
+			continue
+		}
+
+		// 2. Start a background goroutine to rotate status messages every 2 seconds
+		stopStatus := make(chan struct{})
+		go func(channelId, targetTS string) {
+			ticker := time.NewTicker(2 * time.Second)
+			defer ticker.Stop()
+
+			phrases := []string{
+				"Researching project files...",
+				"Analyzing project structure...",
+				"Thinking...",
+				"Tailoring explanations...",
+			}
+			idx := 0
+
+			for {
+				select {
+				case <-stopStatus:
+					// Exit the animation loop when signaled
+					return
+				case <-ticker.C:
+					currentText := phrases[idx%len(phrases)]
+					idx++
+
+					_, _, _, updErr := slackClient.UpdateMessage(
+						channelId,
+						targetTS,
+						slack.MsgOptionText(currentText, false),
+					)
+
+					if updErr != nil {
+						slog.Debug("Status update tick failed: %v", updErr)
+					}
+				}
+			}
+		}(job.ChannelID, msgTs)
+
+		// 3. Obtain session and execute the query
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 
-		// 1. Get or create the session
 		sessionID, err := ocService.GetOrCreateSession(ctx, job)
 		if err != nil {
-			slog.Error(fmt.Sprintf("Worker %d failed to obtain session: %v", id, err))
-			sendSlackReply(slackClient, job.ChannelID, job.ThreadTS, "Sorry, I ran into an issue connecting to the LLM session.")
+			close(stopStatus)
 			cancel()
+			slog.Error(fmt.Sprintf("Worker %d failed to obtain session: %v", id, err))
+			_, _, _, _ = slackClient.UpdateMessage(
+				job.ChannelID,
+				msgTs,
+				slack.MsgOptionText("Sorry, I ran into an issue connecting to the LLM session.", false),
+			)
 			continue
 		}
 
-		// 2. Query OpenCode
+		// Query OpenCode with event streaming
 		reply, err := ocService.Query(ctx, sessionID, job)
-		cancel() // Release context resources as soon as the query returns
+		close(stopStatus) // Stop status ticker since we have the full answer now
+		cancel()
 
 		if err != nil {
-			slog.Error(fmt.Sprintf("Worker %d query failed: %v", id, err))
-			sendSlackReply(slackClient, job.ChannelID, job.ThreadTS, "Sorry, an error occurred while processing your request.")
+			slog.Error(fmt.Sprintf("Worker %d failed to query OpenCode: %v", id, err))
+			_, _, _, _ = slackClient.UpdateMessage(
+				job.ChannelID,
+				msgTs,
+				slack.MsgOptionText("Sorry, an error occurred while processing your request.", false),
+			)
 			continue
 		}
 
-		// 3. Post reply back to Slack thread
-		sendSlackReply(slackClient, job.ChannelID, job.ThreadTS, reply)
-		slog.Info(fmt.Sprintf("Worker %d finished query for thread %s", id, job.ThreadTS))
+		// 4. Overwrite the placeholder message with the final answer
+		_, _, _, err = slackClient.UpdateMessage(
+			job.ChannelID,
+			msgTs,
+			slack.MsgOptionText(reply, false),
+		)
+
+		if err != nil {
+			slog.Error(fmt.Sprintf("Worker %d failed to update final message: %v", id, err))
+		}
+
+		slog.Info(fmt.Sprintf("Worker %d finished query for thread %s.", id, job.ThreadTS))
 	}
 
 	slog.Info(fmt.Sprintf("Worker %d stopped.", id))
