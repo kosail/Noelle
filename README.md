@@ -1,4 +1,12 @@
+<p align="center">
+  <img src="./.github/images/logo.webp" width="256" alt="noelle logo">
+</p>
+
 # Noelle
+
+A knowledge maid that keeps your secrets.
+
+---
 
 Noelle is a small Slack bot written in Go that answers questions about local files and documentation using an AI backend.
 
@@ -6,12 +14,14 @@ Instead of building session management, context loading, and tool execution from
 
 ## Why this exists
 
-Our team has about 10 people, and at most 5 or 6 of us will probably be asking questions at the same time. We wanted a straightforward way to query our local project files directly from Slack without having to hunt down files or re-read tons of documentation manually.
+In the company that I work for, our team has about 10 people and thus we usually have not a lot of time to keep checking on documentation. Though, as our processes are highly documented and the issue is just time, I decided to implement the missing node: a straightforward way to query our local project files directly from Slack without having to hunt down files docs manually.
 
 Using Go and OpenCode makes this clean:
 * OpenCode server handles the heavy lifting (sessions, chat history, file indexing, and tools).
-* Go gives us a light, reliable single binary that connects Slack to OpenCode via Socket Mode.
+* Go gives us a light, reliable single binary that connects Slack to OpenCode via Socket Mode, and which would be cheap to run in AWS Graviton.
 * We do not need multi-platform support or swappable AI backends. Slack plus OpenCode does the job.
+
+The name of this project came from one of my favourites characters of a videogame I play, which is "Noelle". She is a warrior, and a maid. So that's it.
 
 ## Interaction Modes
 
@@ -40,9 +50,9 @@ This project is in its early stages. Only the basic Slack connection (via Socket
 
 ### Slack App Setup
 
-You will need two tokens from the Slack developer dashboard:
-* **Bot User OAuth Token** (`xoxb-...`): Needs permissions to read mentions and send messages (such as `app_mentions:read`, `chat:write`, `commands`).
-* **App-Level Token** (`xapp-...`): With the `connections:write` scope for Socket Mode.
+As there is a lot of documentation online, I will not cover how to configure a Slack bot. In summary, you will need two tokens from the Slack developer dashboard:
+1. **Bot User OAuth Token** (`xoxb-...`): Needs permissions to read mentions and send messages (such as `app_mentions:read`, `chat:write`, `commands`).
+2. **App-Level Token** (`xapp-...`): With the `connections:write` scope for Socket Mode.
 
 ### Configuration
 
@@ -61,6 +71,16 @@ SLACK_APP_TOKEN=xapp-your-app-token
 OPENCODE_SERVER_IP=127.0.0.1
 OPENCODE_SERVER_PORT=4096
 OPENCODE_SERVER_PASSWORD=your-opencode-password
+
+# The model provider to use in OpenCode (e.g. "opencode-go")
+# Optional. If not set, fallbacks to system default.
+# If set, needs OPENCODE_MODEL to be present or else this is ignored
+OPENCODE_PROVIDER=
+
+# The model to use (e.g. deepseek-v4.1-flash)
+# Optional. If not set, fallbacks to system default.
+# If set, needs OPENCODE_PROVIDER to be present or else this is ignored
+OPENCODE_MODEL=
 ```
 
 ### Running
@@ -78,9 +98,22 @@ go build -o noelle ./src
 ./noelle
 ```
 
+---
+
+## Contributing
+
+Contributions are welcome!
+Feel free to fork the repository and submit pull requests.
+If you have ideas, suggestions, or bug reports, open an issue on GitHub.
+
+
+
 ## License
 
-MIT. Free to use, modify, and distribute.
+[MIT License](LICENSE), which means you are free to use, modify, and distribute.
 
 ---
-2026, kosail. With love, from Honduras.
+Noelle. 2026, kosail.
+<br>
+With love, from Honduras.
+
