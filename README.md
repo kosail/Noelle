@@ -15,7 +15,7 @@ Noelle is a small Slack bot written in Go that answers questions about local fil
 
 Instead of building session management, context loading, and tool execution from scratch, Noelle talks directly to a local [OpenCode](https://opencode.ai) server. The idea is to keep things simple, practical, and easy to maintain for a small team.
 
-## Why this exists
+## 🌹 Why this exists
 
 In the company that I work for, our team has about 10 people and thus we usually have not a lot of time to keep checking on documentation. Though, as our processes are highly documented and the issue is just time, I decided to implement the missing node: a straightforward way to query our local project files directly from Slack without having to hunt down files docs manually.
 
@@ -26,7 +26,7 @@ Using Go and OpenCode makes this clean:
 
 The name of this project came from one of my favourites characters of a videogame I play, which is "Noelle". She is a warrior, and a maid. So that's it.
 
-## Interaction Modes
+## 🪷 Interaction Modes
 
 Noelle supports three different modes depending on who is asking and what kind of context they need:
 
@@ -39,11 +39,13 @@ Noelle supports three different modes depending on who is asking and what kind o
 3. **Developer mode (`/dev <question>`)**  
    Geared towards core software engineers. Answers dive into low-level code, engine internals, systems design, and infrastructure.
 
-## Project Status
+## 🌺 Project Status
 
-This project is in its early stages. Only the basic Slack connection (via Socket Mode) and OpenCode client setup are in place.
+This project is completed.
 
-## Getting Started
+I just need to work in the contexts/system-prompts.
+
+## 🌷 Getting Started
 
 ### Prerequisites
 
@@ -103,7 +105,7 @@ go build -o noelle ./src
 
 ---
 
-## Contributing
+## 💐 Contributing
 
 Contributions are welcome!
 Feel free to fork the repository and submit pull requests.
@@ -111,7 +113,7 @@ If you have ideas, suggestions, or bug reports, open an issue on GitHub.
 
 
 
-## License
+## 📜 License
 
 [MIT License](LICENSE), which means you are free to use, modify, and distribute.
 
