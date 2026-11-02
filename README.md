@@ -2,11 +2,14 @@
   <img src="./.github/images/logo.webp" width="256" alt="noelle logo">
 </p>
 
-# Noelle
+<h1 align="center">
+Noelle
+</h1>
 
+<h3 align="center">
 A knowledge maid that keeps your secrets.
+</h3>
 
----
 
 Noelle is a small Slack bot written in Go that answers questions about local files and documentation using an AI backend.
 
