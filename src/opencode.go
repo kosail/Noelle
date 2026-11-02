@@ -57,11 +57,7 @@ func (s *OpenCodeService) GetOrCreateSession(ctx context.Context, job types.Quer
 
 // Send the user question to the session and extracts the answer
 func (s *OpenCodeService) Query(ctx context.Context, sessionID string, job types.QueryJob) (string, error) {
-	// 1. Open the event stream BEFORE the prompt so we don't miss early events
-	stream := s.client.Event.ListStreaming(ctx, opencode.EventListParams{})
-	defer stream.Close()
-
-	// 2. Construct the prompt
+	// Construct the prompt
 	parts := []opencode.SessionPromptParamsPartUnion{
 		opencode.TextPartInputParam{
 			Type: opencode.F(opencode.TextPartInputTypeText),
@@ -90,54 +86,25 @@ func (s *OpenCodeService) Query(ctx context.Context, sessionID string, job types
 		})
 	}
 
-	// 3. Dispatch the prompt to OpenCode
-	_, err := s.client.Session.Prompt(ctx, sessionID, promptParams)
+	// Dispatch the prompt to OpenCode
+	resp, err := s.client.Session.Prompt(ctx, sessionID, promptParams)
 	if err != nil {
 		return "", fmt.Errorf("opencode prompt error: %w", err)
 	}
 
-	// 4.Listen to the stream until OpenCode finishes (session.idle becomes true)
+	// Extract text parts from the response, ignoring reasoning parts
 	var answer strings.Builder
-
-	for stream.Next() {
-		evt := stream.Current()
-
-		switch u := evt.AsUnion().(type) {
-		case opencode.EventListResponseEventMessagePartUpdated:
-			part := u.Properties.Part
-
-			// Make sure if the event belongs to our thread's session
-			if part.SessionID != sessionID {
-				continue
-			}
-
-			// Only collect text parts, ignore reasoning
-			if part.Type == opencode.PartTypeText {
-				if u.Properties.Delta != "" {
-					answer.WriteString(u.Properties.Delta)
-				}
-			}
-
-		case opencode.EventListResponseEventSessionIdle:
-			// When our session becomes idle, all thinking and tools are finished
-			if u.Properties.SessionID == sessionID {
-				result := strings.TrimSpace(answer.String())
-				if result == "" {
-					return "I reviewed the files, but did not find an answer for that query.", nil
-				}
-				return result, nil
-			}
+	for _, part := range resp.Parts {
+		// Only collect text parts, ignore reasoning
+		if part.Type == opencode.PartTypeText && part.Text != "" {
+			answer.WriteString(part.Text)
 		}
 	}
-	// If the stream closed or context expired before session.idle
-	if err := stream.Err(); err != nil {
-		return "", fmt.Errorf("opencode stream error: %w", err)
+
+	result := strings.TrimSpace(answer.String())
+	if result == "" {
+		return "I reviewed the files, but did not find an answer for that query.", nil
 	}
 
-	finalResult := strings.TrimSpace(answer.String())
-	if finalResult != "" {
-		return finalResult, nil
-	}
-
-	return "I reviewed the files, but did not find an answer for that query.", nil
+	return result, nil
 }
