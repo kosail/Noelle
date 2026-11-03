@@ -11,7 +11,8 @@ import (
 	"github.com/slack-go/slack/socketmode"
 )
 
-// Runs a single worker loop. It should be launched as a goroutine:
+// StartWorker runs a single worker loop. It should be launched as a goroutine:
+//
 // go StartWorker(1, ocService, slackClient, jobs)
 func StartWorker(id int, ocService *OpenCodeService, slackClient *socketmode.Client, jobs <-chan types.QueryJob) {
 	slog.Info(fmt.Sprintf("Worker %d started and ready for jobs.", id))
@@ -42,6 +43,9 @@ func StartWorker(id int, ocService *OpenCodeService, slackClient *socketmode.Cli
 				"Analyzing project structure...",
 				"Thinking...",
 				"Tailoring explanations...",
+				"This is taking a while...",
+				"Still working on it...",
+				"Optimizing...",
 			}
 			idx := 0
 
@@ -99,14 +103,37 @@ func StartWorker(id int, ocService *OpenCodeService, slackClient *socketmode.Cli
 		}
 
 		// 4. Overwrite the placeholder message with the final answer
+
+		// The current limit of Slack messages is 4000 runes, so we must ensure it will not exceed
+		msgArray := SplitSlackMessage(reply, 4000)
+
+		// Update the original message with the first part of the reply
+		// and post in new messages as required the rest of the response
 		_, _, _, err = slackClient.UpdateMessage(
 			job.ChannelID,
 			msgTs,
-			slack.MsgOptionText(reply, false),
+			slack.MsgOptionText(msgArray[0], false),
 		)
 
 		if err != nil {
 			slog.Error(fmt.Sprintf("Worker %d failed to update final message: %v", id, err))
+		}
+
+		if err != nil && len(msgArray) > 1 {
+			for i, msg := range msgArray[1:] {
+				_, _, err := slackClient.PostMessage(
+					job.ChannelID,
+					slack.MsgOptionText(msg, false),
+					slack.MsgOptionTS(job.ThreadTS),
+				)
+
+				if err != nil {
+					slog.Error(fmt.Sprintf("Worker %d failed to post part %d message: %v\nStopping response thread to prevent inconsistent replies!", id, i, err))
+					break
+				} else {
+					time.Sleep(250 * time.Millisecond) // Sleep to prevent API rate limiting
+				}
+			}
 		}
 
 		slog.Info(fmt.Sprintf("Worker %d finished query for thread %s.", id, job.ThreadTS))
