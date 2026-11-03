@@ -7,13 +7,20 @@ Noelle
 </h1>
 
 <h3 align="center">
-A knowledge maid that keeps your secrets.
+A knowledge maid that helps your team and keeps your secrets.
 </h3>
 
 
 Noelle is a small Slack bot written in Go that answers questions about local files and documentation using an AI backend.
 
 Instead of building session management, context loading, and tool execution from scratch, Noelle talks directly to a local [OpenCode](https://opencode.ai) server. The idea is to keep things simple, practical, and easy to maintain for a small team.
+
+> [!NOTE]
+> This project was built entirely by me, except for the icon of this project, the `context/` system prompts and the indexes in `docs/`.
+> These were built iteratively and heavily optimized following several RAG and agentic design recommendations.
+>
+> I will leave the links of sources used at the bottom of this file, so you can consult them too. 
+
 
 ## 🌹 Why this exists
 
@@ -24,7 +31,7 @@ Using Go and OpenCode makes this clean:
 * Go gives us a light, reliable single binary that connects Slack to OpenCode via Socket Mode, and which would be cheap to run in AWS Graviton.
 * We do not need multi-platform support or swappable AI backends. Slack plus OpenCode does the job.
 
-The name of this project came from one of my favourites characters of a videogame I play, which is "Noelle". She is a warrior, and a maid. So that's it.
+The name of this project came from one of my favourites characters of a videogame I like, which is "Noelle". She is a warrior, and a maid. I just felt it was kinda funny to call a project like it, and so that's it.
 
 ## 🪷 Interaction Modes
 
@@ -39,11 +46,12 @@ Noelle supports three different modes depending on who is asking and what kind o
 3. **Developer mode (`/dev <question>`)**  
    Geared towards core software engineers. Answers dive into low-level code, engine internals, systems design, and infrastructure.
 
-## 🌺 Project Status
-
-This project is completed.
-
-I just need to work in the contexts/system-prompts.
+> [!IMPORTANT]
+> Noelle creates one OpenCode session per Slack thread, not per channel or per project. A top-level @Noelle message starts a new Slack thread and an OpenCode session tied to it. Replies in that thread reuse it. Different threads in the same channel get different sessions. 
+>
+> You gotta notice that `/artist` and `/dev` create a new announcement thread (this is how Slack works), so each command gets its own session.
+>
+> Idle sessions are cleaned up after one hour, but only cleaned up in Noelle's memory, and never from OpenCode. This automatic OpenCode cleanup may be relevant in future releases.
 
 ## 🌷 Getting Started
 
@@ -102,6 +110,39 @@ Or build a binary:
 go build -o noelle ./src
 ./noelle
 ```
+
+## 🌺 Adding Project Documentation
+
+Noelle does not build or update documentation indexes at runtime. The approach taken here is that **you own your docs, and Noelle cannot modify them in any sort of way**. So building or updating your docs or anything related to it is a work that must happen outside of this bot lifecycle.
+
+I understand that many projects may have different documentation structures, and/or may be located in many places. Thus, the approach this bot takes is an index-based one that helps route the agent quickly and converge on results fast.
+
+Noelle expects these indexes to be in the `docs/` folder in this way:
+* `docs/<PROJECT_FOLDER>/index.md` an index for the project itself.
+* `docs/index.md` for the global project list.
+
+To add a project, you need an AI model with access to the project files/docs and the templates in `docs/`.
+
+1. Give the AI the project documentation and `docs/_project/index.md.example`.
+2. Ask it to do a deep analysis of the docs and build the index. It should find topics that appear in several files, pick one primary source for each topic, and point to the other files that support it.
+3. Save the result as `docs/<PROJECT_FOLDER>/index.md`.
+4. Give the AI the new project index and `docs/index.md.example`.
+5. Ask it to update `docs/index.md` with the new project route, cross-project topics, relationships, and index health.
+6. Check that the paths and section headings exist. Try a few real questions to confirm the routes.
+
+For this analysis procedure filenames alone are not enough. The AI needs to read the docs, because the same topic can live in several files, and we are precisely trying to get into that situations so we can register those results.
+
+On runtime, Noelle reads the global index first, routes to the specific project, and based in the project index, opens only the files needed to answer the question.
+
+
+## 🌸 Resources used
+- [Anthropic, Effective context engineering for AI agents](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents)
+- [Anthropic, Contextual retrieval](https://www.anthropic.com/research/contextual-retrieval)
+- [OpenAI, Retrieval](https://developers.openai.com/api/docs/guides/retrieval)
+- [Google Cloud, Filter with metadata search](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/rag-engine/use-metadata-search)
+- [Microsoft, Develop an agentic RAG solution](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-agentic)
+- [AWS, Agentic retrieval best practices](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentperf03-bp05.html)
+- [Agentic Design, Hierarchical Index Retrieval](https://agentic-design.ai/patterns/knowledge-retrieval/hierarchical-index-retrieval)
 
 ---
 

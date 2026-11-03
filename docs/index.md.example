@@ -1,0 +1,123 @@
+# Noelle Documentation Index
+<!-- noelle-index:v3; scope: global; generated: YYYY-MM-DD; validated: YYYY-MM-DD; schema: noelle-index/v3; projects: N; coverage: full|partial -->
+
+> Global routing map for all projects served by Noelle. Read this file first,
+> then open only the project indexes and source documents needed for the user's
+> question.
+>
+> Retrieval budget: read at most 2 project indexes and 5 source documents before
+> falling back to read-only search or reporting insufficient evidence. Stop as
+> soon as the primary source and required supporting sources support the answer.
+
+## Retrieval protocol
+
+1. Normalize the question: identify project names, aliases, exact identifiers,
+   and whether it spans projects.
+2. Route with the `Query router` and `Cross-project topic map` below.
+3. Read `docs/<PROJECT_FOLDER>/index.md` for each selected project.
+4. Read the selected project's `AGENTS.md` immediately after its index.
+5. Use the project `Topic map` to select the primary source and only the
+   supporting sources needed for the answer.
+6. Stop when the evidence supports the answer. Do not open the whole docs tree.
+7. Fall back to read-only file search when routing is missing, stale, or
+   uncertain. State the limitation when it affects the answer.
+8. Cite exact paths and section headings.
+
+## Query router
+
+| Query type or intent | Primary route | Supporting route | Stop condition |
+|---|---|---|---|
+| What is this? | Project snapshot and topic map | Glossary, overview | Snapshot plus one topic source |
+| How do I do this? | Project topic map -> workflow | Runbook, setup guide | Procedure plus verification |
+| Why does it work this way? | Architecture or decision topic | ADR, design document | Decision plus evidence |
+| It is not working | Troubleshooting topic | Runbook, errors, code | Cause, fix, and verification |
+| API or configuration reference | Contract or configuration topic | Schema, reference | Contract plus invariant |
+| Cross-project behavior | Cross-project topic map | Selected project topic maps | One primary source per project |
+| Historical or deprecated behavior | History or stale topic | Changelog, archive, current source | Superseded source plus current source |
+
+## Project routing
+
+| Project | Documentation folder | Status | Description | Use for | Do not use for | Aliases and keywords | Project instructions | Best modes |
+|---|---|---|---|---|---|---|---|---|
+| <Project name> | `docs/<PROJECT_FOLDER>/` | active | <One-sentence description> | <Question types and user intents> | <Nearby topics owned elsewhere> | <Names, products, features> | `<project-root>/AGENTS.md` or `none` | Normal, Artist, Dev |
+
+Project instructions are high-priority context for that project only. They must
+never be merged with another project's instructions.
+
+## Cross-project topic map
+
+Use this only for topics that span projects or share ambiguous terminology. Each
+row must name one primary project and source. Keep this map small.
+
+| Topic | Aliases or exact identifiers | Primary project and source | Supporting projects and sources | Stale or conflicting | Search terms | Stop condition |
+|---|---|---|---|---|---|---|
+| <Shared topic> | <Names, codes, API fields, synonyms> | `<PROJECT_FOLDER>` -> `<path>` -> <section> | `<PROJECT_FOLDER>` -> `<path>` -> <section> | `<path>` -> <section> (stale) | `<term1>|<term2>` | <What to read before stopping> |
+
+Do not copy detailed project content into this table. Route to the project topic
+maps and source documents.
+
+## Cross-project relationships
+
+Use typed relationships instead of vague "related" links.
+
+- `depends_on`: <Project A> requires <Project B> for <boundary>.
+- `reads_from`: <Project A> consumes data or artifacts from <Project B>.
+- `writes_to`: <Project A> produces data or artifacts used by <Project B>.
+- `shares_concept`: Both projects use <shared concept>, but define it in their own scope.
+- `supersedes`: <New project or source> replaces <old project or source>.
+- `conflicts_with`: Sources disagree; read both and report the conflict.
+
+## Global glossary and disambiguation
+
+- **<Term>**: <Meaning>. Route to `<PROJECT_FOLDER>` and `<path>` -> <section>.
+- **<Abbreviation>**: <Expanded name>. Also called <aliases>.
+- **<Ambiguous name>**: Use `<Project A>` when <condition>; use `<Project B>` when <condition>.
+
+## Authority, freshness, and conflict rules
+
+Within a project, use this default order unless the project index declares a
+more specific rule:
+
+1. Noelle's system and security rules.
+2. The project's applicable `AGENTS.md`, limited to that project.
+3. Documents marked `canonical` and currently verified.
+4. Documents marked `supporting` or `reference`.
+5. Navigational indexes and generated summaries.
+6. Planning, historical, stale, superseded, optional, or proposed material.
+
+An index is a navigation aid, not proof of a detailed fact. If sources conflict,
+identify the conflict, prefer the more specific and recently verified source,
+and cite the evidence. Never silently use a stale or superseded source as
+current truth. Skip optional material unless the answer requires it.
+
+## Out of scope and abstention
+
+- <Topic not covered by any project>
+- <Question that requires access or permissions Noelle does not have>
+- <Action Noelle is not allowed to perform>
+
+When no route provides sufficient evidence, say what was not found and cite the
+closest available project or document rather than inventing an answer.
+
+## Index health
+
+- Last validated: YYYY-MM-DD
+- Projects routed: N
+- Projects missing a topic map: <none or list>
+- Known routing gaps: <topics, projects, or stale entries>
+
+<!--
+Authoring rules:
+- Keep the global index compact, ideally under 130 lines and 12 KB.
+- Every project entry must include positive routes, exclusions, aliases,
+  project instructions, and coverage status.
+- Every cross-project topic must have one primary project and source.
+- Every topic that appears in more than one file must appear in a project topic
+  map.
+- Search terms must include exact identifiers, error codes, API fields, and
+  synonyms.
+- Validate paths, anchors, should-route, should-not-route, multi-file,
+  cross-project, and stale-source cases.
+- Update `validated` after validation.
+- Do not include credentials, tokens, passwords, or `.env` values.
+-->

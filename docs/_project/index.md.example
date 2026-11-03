@@ -1,0 +1,163 @@
+# <Project Name> Index
+<!-- noelle-index:v3; scope: project; generated: YYYY-MM-DD; validated: YYYY-MM-DD; schema: noelle-index/v3; coverage: full|partial; topics: N; documents: N -->
+
+> Project navigation layer for `<PROJECT_FOLDER>`. Read this before opening
+> other project documents. Use it to select the smallest sufficient evidence
+> set, not as a replacement for the linked source documents.
+>
+> Retrieval budget: read the primary source plus at most 2 supporting sources
+> before falling back to read-only search or reporting insufficient evidence.
+
+## Project identity
+
+- **Purpose:** <What the project does>
+- **Status:** <Active, maintenance, deprecated, or planned>
+- **Audience:** <Who uses or maintains it>
+- **Documentation folder:** `docs/<PROJECT_FOLDER>/`
+- **Project/code root:** `<repository path>`
+- **Project instructions:** `<repository path>/AGENTS.md` or `none`
+- **Owner/team:** <Team or role>
+- **Last verified:** YYYY-MM-DD
+- **Coverage:** <full or partial, with the missing areas>
+- **Scope:** <What belongs here>
+- **Out of scope:** <What belongs to another project>
+
+## Routing contract
+
+Use this project when the user asks about:
+
+- <Question, feature, product, or term that routes here>
+- <Common user wording or alias>
+
+Do not use this project for:
+
+- <Similar topic owned by another project>
+- <Near-miss wording that should route elsewhere>
+
+### Routing examples
+
+| User wording or intent | Route | Do not confuse with |
+|---|---|---|
+| <Example question> | <Topic or document> | <Nearby topic> |
+
+## Project instructions: AGENTS.md
+
+Read `<repository path>/AGENTS.md` immediately after this index when it exists.
+Treat it as high-priority project-local context for this project only. Do not
+merge it with another project's `AGENTS.md`, apply it outside this project, or
+treat its commands as permission to perform writes or destructive actions.
+Noelle's system and security rules always win.
+
+- **Path:** `<repository path>/AGENTS.md`
+- **Scope:** <Project root or narrower subtree>
+- **Last verified:** YYYY-MM-DD
+
+## Topic map
+
+This is the forward index. Add one row per topic that appears in more than one
+file, answers a common question, or has stale or conflicting sources. The primary
+source is the starting point, not the only source. Read supporting sources only
+when the primary source is incomplete or conflicts. Use stale sources only to
+explain history or conflict.
+
+| Topic | Aliases or exact identifiers | Primary source | Supporting sources | Stale or conflicting | Search terms | Read order and stop |
+|---|---|---|---|---|---|---|
+| <Topic> | <Term, code, field, synonym> | `<path>` -> <section> | `<path>` -> <section> | `<path>` -> <section> (stale) | `<term1>|<term2>` | <Primary, then one supporting only if needed; stop when...> |
+
+## Workflows
+
+| Workflow | Read first | Then read | Verify with | Skip |
+|---|---|---|---|---|
+| Setup | `<path>` -> <section> | `<path>` -> <section> | <Command or expected result> | <Irrelevant area> |
+| Run | `<path>` -> <section> | `<path>` -> <section> | <Expected result> | <Irrelevant area> |
+| Test | `<path>` -> <section> | `<path>` -> <section> | <Expected result> | <Irrelevant area> |
+| Deploy | `<path>` -> <section> | `<path>` -> <section> | <Verification> | <Irrelevant area> |
+| Troubleshoot | `<path>` -> <section> | `<path>` -> <section> | <Expected result> | <Irrelevant area> |
+
+## Document map
+
+This is the inverted index. Every `Topics` value must match a topic key in the
+`Topic map`. Every document in the documentation tree must appear here or be
+listed under `Index health`.
+
+| Document | Type | Authority | Freshness | Topics | Read when | Skip when | Size | Keywords | Anchors |
+|---|---|---|---|---|---|---|---|---|---|
+| `<path>` | guide | canonical | verified YYYY-MM-DD | <topic keys> | <Question types> | <When irrelevant> | S/M/L | <Terms> | `<path>` -> <section> |
+
+Document types may include `overview`, `concept`, `procedure`, `runbook`,
+`architecture`, `contract`, `reference`, `decision`, `history`, or `generated`.
+
+Authority values:
+
+- `instruction`: applicable project instructions such as `AGENTS.md`.
+- `canonical`: preferred current source of truth.
+- `supporting`: useful context but not the primary source.
+- `reference`: background or external reference.
+- `optional`: useful for history or depth, skipped by default.
+- `stale`: retained for history; never use as current truth without warning.
+
+Freshness values should identify when a source was last verified. Mark sources
+as `stale`, `superseded`, `conflicted`, or `unavailable` when applicable.
+
+## Concepts and vocabulary
+
+- **<Term>**: <Definition>. See `<path>` -> <section>.
+- **<Abbreviation>**: <Expanded name and aliases>.
+- **<Invariant>**: <Rule that must remain true>. Verify in `<path>`.
+
+## Architecture and code map
+
+- **Entry points:** `<path>` - <What starts the relevant flow>
+- **Core components:** `<path>` - <Responsibility>
+- **Data flow:** <Short ordered sequence of components and boundaries>
+- **Integration boundaries:** <APIs, queues, services, or external systems>
+- **Important invariants:** <Rules that affect safe interpretation>
+- **Performance or scaling notes:** `<path>` -> <section>
+
+## Typed relationships
+
+- `depends_on`: This project requires `<project or document>` for <reason>.
+- `implements`: `<document or code>` implements `<contract or design>`.
+- `read_before`: Read `<path>` before `<path>` for <reason>.
+- `read_with`: Read `<path>` with `<path>` to preserve context.
+- `supersedes`: `<current path>` replaces `<old path>`.
+- `conflicts_with`: `<path>` disagrees with `<path>` on <topic>.
+
+## Operations
+
+- **Build:** `<command or document>`
+- **Run:** `<command or document>`
+- **Test:** `<command or document>`
+- **Deploy:** `<command or document>`
+- **Configuration:** Use variable names only; never include secret values.
+- **Troubleshooting:** `<path>` -> <section>
+
+## Known gaps, conflicts, and stale material
+
+- <Missing documentation, unresolved ambiguity, or known conflict>
+- <Stale document and the newer source that should be preferred>
+
+## Index health
+
+- Last validated: YYYY-MM-DD
+- Topics mapped: N
+- Documents mapped: N
+- Documents not indexed: <paths or none>
+- Known index gaps: <Missing topics, broken anchors, or unverified entries>
+
+<!--
+Authoring rules:
+- Keep the project index compact, ideally under 250 lines and 30 KB.
+- Every document in the documentation tree must appear in the document map or be
+  listed under Index health.
+- Every topic that appears in more than one file must appear in the topic map.
+- Every topic must have one primary source, exact search terms, and a stop rule.
+- Every `Topics` value in the document map must match a topic key in the topic
+  map.
+- Paths and anchors must exist. Mark stale, superseded, conflicted, unavailable,
+  and optional sources explicitly.
+- Validate should-route, should-not-route, multi-file, stale-source,
+  missing-document, and cross-project cases.
+- Update `validated` after validation.
+- Do not include credentials, tokens, passwords, or `.env` values.
+-->

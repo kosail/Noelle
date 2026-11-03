@@ -16,8 +16,9 @@ import (
 	"github.com/sst/opencode-sdk-go/option"
 )
 
-// Number of concurrent workers that will be taking requests
-const numWorkers = 3
+const numWorkers = 3 // Number of concurrent workers that will be taking requests
+const cleanupTimerMinutes = 30 // Run the opencode session cleanup every X minutes
+const sessionMaxIdle = 60 // Clean opencode sessions that have been idle for X minutes
 
 func main() {
 	// Check if .env is correctly set up, and load env variables
@@ -111,11 +112,11 @@ func main() {
 		go StartWorker(i, ocService, slackClient, jobQueue)
 	}
 
-	// 7. Start a background ticker to clean up idle sessions every 30 min
+	// 7. Start a background ticker to clean up idle sessions every x minutes
 	go func() {
-		ticker := time.NewTicker(30 * time.Minute)
+		ticker := time.NewTicker(cleanupTimerMinutes * time.Minute)
 		for range ticker.C {
-			evicted := sessionStore.Cleanup(1 * time.Hour)
+			evicted := sessionStore.Cleanup(sessionMaxIdle * time.Minute)
 			if evicted > 0 {
 				slog.Info(fmt.Sprintf("Cleaned up %d idle OpenCode sessions from memory.", evicted))
 			}
