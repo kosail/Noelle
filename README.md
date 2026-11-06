@@ -133,6 +133,9 @@ On runtime, Noelle reads the global index first, routes to the specific project,
 - [AWS, Agentic retrieval best practices](https://docs.aws.amazon.com/wellarchitected/latest/agentic-ai-lens/agentperf03-bp05.html)
 - [Agentic Design, Hierarchical Index Retrieval](https://agentic-design.ai/patterns/knowledge-retrieval/hierarchical-index-retrieval)
 
+### Fonts
+- [Frauces, from Google Fonts](https://fonts.google.com/specimen/Fraunces). Used in the banner for this repository.
+
 ---
 
 ## 💐 Contributing
@@ -140,7 +143,6 @@ On runtime, Noelle reads the global index first, routes to the specific project,
 Contributions are welcome!
 Feel free to fork the repository and submit pull requests.
 If you have ideas, suggestions, or bug reports, open an issue on GitHub.
-
 
 
 ## 📜 License
